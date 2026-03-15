@@ -20,24 +20,15 @@ pipeline {
         stage('Start Selenium Grid') {
             steps {
                 sh '''
-                    JENKINS_NETWORK=$(docker inspect jenkins --format "{{range .NetworkSettings.Networks}}{{.NetworkID}}{{end}}" | head -1)
-
                     docker run -d \
                         --name selenium-chrome-${BUILD_NUMBER} \
-                        --network ${JENKINS_NETWORK} \
+                        --network insider-test-network \
                         --shm-size=2g \
                         seleniarm/standalone-chromium:latest
 
                     echo "Waiting for Selenium Grid..."
-                    for i in $(seq 1 30); do
-                        STATUS=$(docker exec selenium-chrome-${BUILD_NUMBER} curl -s http://localhost:4444/wd/hub/status 2>/dev/null || echo "")
-                        if echo "$STATUS" | grep -q '"ready":true'; then
-                            echo "Selenium Grid is ready!"
-                            break
-                        fi
-                        echo "Attempt $i: not ready yet..."
-                        sleep 3
-                    done
+                    sleep 15
+                    echo "Selenium Grid should be ready"
                 '''
             }
         }
