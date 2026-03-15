@@ -69,8 +69,8 @@ stage('Save Results to DB') {
             . .venv/bin/activate
             pip install mysql-connector-python -q
 
-            MYSQL_HOST=172.17.0.1 \
-            MYSQL_PORT=3307 \
+            MYSQL_HOST=172.25.0.2 \
+            MYSQL_PORT=3306 \
             MYSQL_USER=root \
             MYSQL_PASSWORD=insider123 \
             MYSQL_DATABASE=test_results \
