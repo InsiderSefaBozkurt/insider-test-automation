@@ -15,20 +15,27 @@ pipeline {
 
     stages {
 
-        stage('Start Selenium Grid') {
-            steps {
-                sh '''
-                    docker run -d \
-                        --name selenium-chrome-${BUILD_NUMBER} \
-                        --shm-size=2g \
-                        -p 4444:4444 \
-                        seleniarm/standalone-chromium:latest
+stage('Start Selenium Grid') {
+    steps {
+        sh '''
+            docker run -d \
+                --name selenium-chrome-${BUILD_NUMBER} \
+                --shm-size=2g \
+                --network host \
+                seleniarm/standalone-chromium:latest
 
-                    sleep 5
-                    echo "Selenium Grid started"
-                '''
-            }
-        }
+            echo "Waiting for Selenium Grid to be ready..."
+            for i in $(seq 1 30); do
+                if curl -s http://localhost:4444/wd/hub/status | grep -q '"ready":true'; then
+                    echo "Selenium Grid is ready!"
+                    break
+                fi
+                echo "Attempt $i: Grid not ready yet..."
+                sleep 2
+            done
+        '''
+    }
+}
         stage('Install Python Dependencies') {
             steps {
         sh '''
