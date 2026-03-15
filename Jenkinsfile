@@ -10,50 +10,56 @@ pipeline {
     }
 
     environment {
-        PYTHONPATH = "${WORKSPACE}"
+        PYTHONPATH     = "${WORKSPACE}"
+        SELENIUM_HOST  = "selenium-chrome-${BUILD_NUMBER}"
+        SELENIUM_URL   = "http://selenium-chrome-${BUILD_NUMBER}:4444/wd/hub"
     }
 
     stages {
 
-stage('Start Selenium Grid') {
-    steps {
-        sh '''
-            docker run -d \
-                --name selenium-chrome-${BUILD_NUMBER} \
-                --shm-size=2g \
-                --network host \
-                seleniarm/standalone-chromium:latest
+        stage('Start Selenium Grid') {
+            steps {
+                sh '''
+                    JENKINS_NETWORK=$(docker inspect jenkins --format "{{range .NetworkSettings.Networks}}{{.NetworkID}}{{end}}" | head -1)
 
-            echo "Waiting for Selenium Grid to be ready..."
-            for i in $(seq 1 30); do
-                if curl -s http://localhost:4444/wd/hub/status | grep -q '"ready":true'; then
-                    echo "Selenium Grid is ready!"
-                    break
-                fi
-                echo "Attempt $i: Grid not ready yet..."
-                sleep 2
-            done
-        '''
-    }
-}
+                    docker run -d \
+                        --name selenium-chrome-${BUILD_NUMBER} \
+                        --network ${JENKINS_NETWORK} \
+                        --shm-size=2g \
+                        seleniarm/standalone-chromium:latest
+
+                    echo "Waiting for Selenium Grid..."
+                    for i in $(seq 1 30); do
+                        STATUS=$(docker exec selenium-chrome-${BUILD_NUMBER} curl -s http://localhost:4444/wd/hub/status 2>/dev/null || echo "")
+                        if echo "$STATUS" | grep -q '"ready":true'; then
+                            echo "Selenium Grid is ready!"
+                            break
+                        fi
+                        echo "Attempt $i: not ready yet..."
+                        sleep 3
+                    done
+                '''
+            }
+        }
+
         stage('Install Python Dependencies') {
             steps {
-        sh '''
-            apt-get install -y -qq python3-venv
-            python3 -m venv .venv
-            . .venv/bin/activate
-            pip install --upgrade pip -q
-            pip install -r requirements.txt -q
-        '''
-    }
-}
+                sh '''
+                    apt-get install -y -qq python3-venv
+                    python3 -m venv .venv
+                    . .venv/bin/activate
+                    pip install --upgrade pip -q
+                    pip install -r requirements.txt -q
+                '''
+            }
+        }
 
         stage('Run Tests') {
             steps {
                 sh '''
                     . .venv/bin/activate
                     mkdir -p reports screenshots
-                    pytest tests/ \
+                    SELENIUM_REMOTE_URL=${SELENIUM_URL} pytest tests/ \
                         --browser=chrome \
                         --html=reports/report.html \
                         --self-contained-html \

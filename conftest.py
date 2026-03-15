@@ -33,8 +33,9 @@ def driver(browser_name):
 
 
 def _create_driver(browser_name: str):
-    from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
+    import os
     from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options as ChromeOptions
 
     options = ChromeOptions()
     options.add_argument("--no-sandbox")
@@ -42,15 +43,13 @@ def _create_driver(browser_name: str):
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
 
-    # CI ortamında Remote WebDriver kullan
-    import os
-    if os.environ.get('CI') or os.environ.get('JENKINS_URL'):
+    remote_url = os.environ.get('SELENIUM_REMOTE_URL')
+    if remote_url:
         return webdriver.Remote(
-            command_executor='http://localhost:4444/wd/hub',
+            command_executor=remote_url,
             options=options
         )
 
-    # Local'de direkt Chrome kullan
     return webdriver.Chrome(options=options)
 
 
