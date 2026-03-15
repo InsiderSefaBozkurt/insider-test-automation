@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: insider-test-dashboards
+    folder: Insider Tests
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

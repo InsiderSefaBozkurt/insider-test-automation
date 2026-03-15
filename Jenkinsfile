@@ -63,6 +63,21 @@ pipeline {
                 '''
             }
         }
+stage('Save Results to DB') {
+    steps {
+        sh '''
+            . .venv/bin/activate
+            pip install mysql-connector-python -q
+
+            MYSQL_HOST=172.17.0.1 \
+            MYSQL_PORT=3307 \
+            MYSQL_USER=root \
+            MYSQL_PASSWORD=insider123 \
+            MYSQL_DATABASE=test_results \
+            python save_results.py reports/junit.xml
+        '''
+    }
+}
     }
 
     post {

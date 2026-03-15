@@ -1,0 +1,11 @@
+apiVersion: 1
+datasources:
+  - name: MySQL
+    type: mysql
+    url: insider-mysql:3306
+    database: test_results
+    user: root
+    secureJsonData:
+      password: insider123
+    isDefault: true
+    editable: true

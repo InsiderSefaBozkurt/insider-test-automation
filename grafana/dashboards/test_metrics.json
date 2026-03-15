@@ -1,0 +1,101 @@
+{
+  "title": "Insider Test Automation Metrics",
+  "uid": "insider-tests",
+  "version": 1,
+  "schemaVersion": 36,
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Pass Rate (%)",
+      "type": "gauge",
+      "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0},
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 100,
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 60},
+              {"color": "green", "value": 80}
+            ]
+          }
+        }
+      },
+      "targets": [{
+        "datasource": "MySQL",
+        "rawSql": "SELECT NOW() as time, ROUND(SUM(passed)/SUM(total)*100, 1) as value FROM test_runs ORDER BY run_at DESC LIMIT 1",
+        "format": "time_series"
+      }]
+    },
+    {
+      "id": 2,
+      "title": "Total Tests Run",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 3, "x": 6, "y": 0},
+      "targets": [{
+        "datasource": "MySQL",
+        "rawSql": "SELECT NOW() as time, SUM(total) as value FROM test_runs",
+        "format": "time_series"
+      }]
+    },
+    {
+      "id": 3,
+      "title": "Total Failed",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 3, "x": 9, "y": 0},
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "red", "value": 1}
+            ]
+          }
+        }
+      },
+      "targets": [{
+        "datasource": "MySQL",
+        "rawSql": "SELECT NOW() as time, SUM(failed)+SUM(errors) as value FROM test_runs",
+        "format": "time_series"
+      }]
+    },
+    {
+      "id": 4,
+      "title": "Pass / Fail Over Time",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "targets": [{
+        "datasource": "MySQL",
+        "rawSql": "SELECT run_at as time, passed as Passed, failed+errors as Failed FROM test_runs ORDER BY run_at",
+        "format": "time_series"
+      }]
+    },
+    {
+      "id": 5,
+      "title": "Avg Execution Time (sec)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [{
+        "datasource": "MySQL",
+        "rawSql": "SELECT run_at as time, duration_sec as 'Duration (s)' FROM test_runs ORDER BY run_at",
+        "format": "time_series"
+      }]
+    },
+    {
+      "id": 6,
+      "title": "Test Case Results (Last Run)",
+      "type": "table",
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 16},
+      "targets": [{
+        "datasource": "MySQL",
+        "rawSql": "SELECT tc.name as 'Test Name', tc.status as 'Status', ROUND(tc.duration_sec,2) as 'Duration (s)', tr.run_at as 'Run At' FROM test_cases tc JOIN test_runs tr ON tc.run_id = tr.id WHERE tr.id = (SELECT MAX(id) FROM test_runs) ORDER BY tc.id",
+        "format": "table"
+      }]
+    }
+  ],
+  "time": {"from": "now-7d", "to": "now"}
+}

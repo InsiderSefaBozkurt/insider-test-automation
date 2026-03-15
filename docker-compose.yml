@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  grafana:
+    image: grafana/grafana:latest
+    container_name: insider-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=insider123
+      - GF_SECURITY_ADMIN_USER=admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - insider-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: insider-mysql
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=insider123
+      - MYSQL_DATABASE=test_results
+    networks:
+      - insider-network
+
+networks:
+  insider-network:
+    driver: bridge
