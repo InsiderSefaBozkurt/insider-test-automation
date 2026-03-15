@@ -42,6 +42,10 @@ def _create_driver(browser_name: str):
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-popup-blocking")
+    options.add_argument("--disable-notifications")
+    options.add_argument("--start-maximized")
 
     remote_url = os.environ.get('SELENIUM_REMOTE_URL')
     if remote_url:

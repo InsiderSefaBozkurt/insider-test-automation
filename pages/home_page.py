@@ -76,11 +76,14 @@ class HomePage(BasePage):
     def _try_company_menu(self) -> bool:
         """Hover over Company menu item and click 'We're hiring' in the submenu."""
         try:
+            import time
             company_item = self.find_clickable(*self._COMPANY_NAV_ITEM)
+            self.scroll_into_view(company_item)
+            from selenium.webdriver.common.action_chains import ActionChains
             ActionChains(self.driver).move_to_element(company_item).perform()
-            # Wait a moment for submenu to appear
-            import time; time.sleep(0.8)
+            time.sleep(1.5)
             link = self.find_clickable(*self._WERE_HIRING_LINK)
+            self.scroll_into_view(link)
             link.click()
             return True
         except Exception:
