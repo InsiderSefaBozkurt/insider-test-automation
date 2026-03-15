@@ -29,17 +29,17 @@ pipeline {
                 '''
             }
         }
-
         stage('Install Python Dependencies') {
             steps {
-                sh '''
-                    python3 -m venv .venv
-                    . .venv/bin/activate
-                    pip install --upgrade pip -q
-                    pip install -r requirements.txt -q
-                '''
-            }
-        }
+        sh '''
+            apt-get install -y -qq python3-venv
+            python3 -m venv .venv
+            . .venv/bin/activate
+            pip install --upgrade pip -q
+            pip install -r requirements.txt -q
+        '''
+    }
+}
 
         stage('Run Tests') {
             steps {
