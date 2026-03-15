@@ -33,22 +33,25 @@ def driver(browser_name):
 
 
 def _create_driver(browser_name: str):
-    if browser_name == "chrome":
-        options = ChromeOptions()
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--disable-gpu")
-        options.add_argument("--window-size=1920,1080")
-        return webdriver.Chrome(options=options)
+    from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
+    from selenium import webdriver
 
-    elif browser_name == "firefox":
-        options = FirefoxOptions()
-        options.add_argument("--width=1920")
-        options.add_argument("--height=1080")
-        return webdriver.Firefox(options=options)
+    options = ChromeOptions()
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--window-size=1920,1080")
 
-    else:
-        raise ValueError(f"Unsupported browser: '{browser_name}'. Use 'chrome' or 'firefox'.")
+    # CI ortamında Remote WebDriver kullan
+    import os
+    if os.environ.get('CI') or os.environ.get('JENKINS_URL'):
+        return webdriver.Remote(
+            command_executor='http://localhost:4444/wd/hub',
+            options=options
+        )
+
+    # Local'de direkt Chrome kullan
+    return webdriver.Chrome(options=options)
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)

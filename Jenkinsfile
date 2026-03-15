@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'python:3.12-slim'
-            args '--shm-size=2g'
-        }
-    }
+    agent any
 
     options {
         timeout(time: 30, unit: 'MINUTES')
@@ -15,28 +10,22 @@ pipeline {
     }
 
     environment {
-        BROWSER         = 'chrome'
-        PYTHONPATH      = "${WORKSPACE}"
-        DEBIAN_FRONTEND = 'noninteractive'
+        PYTHONPATH = "${WORKSPACE}"
     }
 
     stages {
 
-        stage('Install System Dependencies') {
+        stage('Start Selenium Grid') {
             steps {
                 sh '''
-                    apt-get update -qq
-                    apt-get install -y -qq \
-                        wget curl gnupg unzip \
-                        fonts-liberation libappindicator3-1 libasound2 \
-                        libatk-bridge2.0-0 libatk1.0-0 libcups2 libdbus-1-3 \
-                        libgtk-3-0 libnss3 libxss1 libxtst6 xdg-utils libgbm1
+                    docker run -d \
+                        --name selenium-chrome-${BUILD_NUMBER} \
+                        --shm-size=2g \
+                        -p 4444:4444 \
+                        seleniarm/standalone-chromium:latest
 
-                    wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-                    apt-get install -y ./google-chrome-stable_current_amd64.deb || apt-get install -yf
-                    rm google-chrome-stable_current_amd64.deb
-
-                    echo "Chrome version: $(google-chrome --version)"
+                    sleep 5
+                    echo "Selenium Grid started"
                 '''
             }
         }
@@ -44,6 +33,8 @@ pipeline {
         stage('Install Python Dependencies') {
             steps {
                 sh '''
+                    python3 -m venv .venv
+                    . .venv/bin/activate
                     pip install --upgrade pip -q
                     pip install -r requirements.txt -q
                 '''
@@ -53,6 +44,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 sh '''
+                    . .venv/bin/activate
                     mkdir -p reports screenshots
                     pytest tests/ \
                         --browser=chrome \
@@ -68,6 +60,8 @@ pipeline {
 
     post {
         always {
+            sh 'docker rm -f selenium-chrome-${BUILD_NUMBER} || true'
+
             publishHTML(target: [
                 allowMissing         : true,
                 alwaysLinkToLastBuild: true,
