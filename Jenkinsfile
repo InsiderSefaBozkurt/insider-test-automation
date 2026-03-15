@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'python:3.12-slim'
+            args '--shm-size=2g'
+        }
+    }
 
     options {
         timestamps()
@@ -11,25 +16,37 @@ pipeline {
     }
 
     environment {
-        BROWSER = 'chrome'
-        PYTHONPATH = "${WORKSPACE}"
+        BROWSER         = 'chrome'
+        PYTHONPATH      = "${WORKSPACE}"
+        DEBIAN_FRONTEND = 'noninteractive'
     }
 
     stages {
 
-        stage('Checkout') {
+        stage('Install System Dependencies') {
             steps {
-                checkout scm
+                sh '''
+                    apt-get update -qq
+                    apt-get install -y -qq \
+                        wget curl gnupg unzip \
+                        fonts-liberation libappindicator3-1 libasound2 libatk-bridge2.0-0 \
+                        libatk1.0-0 libcups2 libdbus-1-3 libgdk-pixbuf2.0-0 libgtk-3-0 \
+                        libnss3 libxss1 libxtst6 xdg-utils libgbm1
+
+                    wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+                    apt-get install -y ./google-chrome-stable_current_amd64.deb || apt-get install -yf
+                    rm google-chrome-stable_current_amd64.deb
+
+                    echo "Chrome version: $(google-chrome --version)"
+                '''
             }
         }
 
-        stage('Setup Python Environment') {
+        stage('Install Python Dependencies') {
             steps {
                 sh '''
-                    python3 -m venv .venv
-                    . .venv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
+                    pip install --upgrade pip -q
+                    pip install -r requirements.txt -q
                 '''
             }
         }
@@ -37,11 +54,12 @@ pipeline {
         stage('Run Tests') {
             steps {
                 sh '''
-                    . .venv/bin/activate
+                    mkdir -p reports screenshots
                     pytest tests/ \
-                        --browser=${BROWSER} \
+                        --browser=chrome \
                         --html=reports/report.html \
                         --self-contained-html \
+                        --junit-xml=reports/junit.xml \
                         -v \
                         || true
                 '''
@@ -51,7 +69,6 @@ pipeline {
 
     post {
         always {
-            // Publish HTML report
             publishHTML(target: [
                 allowMissing         : true,
                 alwaysLinkToLastBuild: true,
@@ -61,13 +78,11 @@ pipeline {
                 reportName           : 'Pytest HTML Report'
             ])
 
-            // Archive screenshots on failure
             archiveArtifacts(
-                artifacts: 'screenshots/*.png',
+                artifacts: 'screenshots/*.png,reports/report.html',
                 allowEmptyArchive: true
             )
 
-            // Publish JUnit-style results (requires pytest-junit)
             junit(
                 testResults: 'reports/junit.xml',
                 allowEmptyResults: true
