@@ -22,13 +22,14 @@ pipeline {
                 sh '''
                     docker run -d \
                         --name selenium-chrome-${BUILD_NUMBER} \
-                        --network insider-test-network \
+                        --network bridge \
                         --shm-size=2g \
                         seleniarm/standalone-chromium:latest
 
-                    echo "Waiting for Selenium Grid..."
                     sleep 15
-                    echo "Selenium Grid should be ready"
+
+                    SELENIUM_IP=$(docker inspect selenium-chrome-${BUILD_NUMBER} --format "{{.NetworkSettings.IPAddress}}")
+                    echo "Selenium IP: ${SELENIUM_IP}"
                 '''
             }
         }
@@ -50,7 +51,11 @@ pipeline {
                 sh '''
                     . .venv/bin/activate
                     mkdir -p reports screenshots
-                    SELENIUM_REMOTE_URL=${SELENIUM_URL} pytest tests/ \
+
+                    SELENIUM_IP=$(docker inspect selenium-chrome-${BUILD_NUMBER} --format "{{.NetworkSettings.IPAddress}}")
+                    echo "Connecting to Selenium at: ${SELENIUM_IP}:4444"
+
+                    SELENIUM_REMOTE_URL=http://${SELENIUM_IP}:4444/wd/hub pytest tests/ \
                         --browser=chrome \
                         --html=reports/report.html \
                         --self-contained-html \
@@ -60,7 +65,6 @@ pipeline {
                 '''
             }
         }
-    }
 
     post {
         always {
