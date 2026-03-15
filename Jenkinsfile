@@ -10,9 +10,7 @@ pipeline {
     }
 
     environment {
-        PYTHONPATH     = "${WORKSPACE}"
-        SELENIUM_HOST  = "selenium-chrome-${BUILD_NUMBER}"
-        SELENIUM_URL   = "http://selenium-chrome-${BUILD_NUMBER}:4444/wd/hub"
+        PYTHONPATH = "${WORKSPACE}"
     }
 
     stages {
@@ -65,6 +63,7 @@ pipeline {
                 '''
             }
         }
+    }
 
     post {
         always {
