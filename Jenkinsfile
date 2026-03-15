@@ -28,9 +28,9 @@ pipeline {
                     apt-get update -qq
                     apt-get install -y -qq \
                         wget curl gnupg unzip \
-                        fonts-liberation libappindicator3-1 libasound2 libatk-bridge2.0-0 \
-                        libatk1.0-0 libcups2 libdbus-1-3 libgdk-pixbuf2.0-0 libgtk-3-0 \
-                        libnss3 libxss1 libxtst6 xdg-utils libgbm1
+                        fonts-liberation libappindicator3-1 libasound2 \
+                        libatk-bridge2.0-0 libatk1.0-0 libcups2 libdbus-1-3 \
+                        libgtk-3-0 libnss3 libxss1 libxtst6 xdg-utils libgbm1
 
                     wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
                     apt-get install -y ./google-chrome-stable_current_amd64.deb || apt-get install -yf
